@@ -6,10 +6,11 @@ import re
 
 st.header("📥 특강 등록부 생성")
 
-# 📌 명사형 추출 함수
+# ▶️ 명사 추출 함수 (개선된 버전)
 def 명사형으로_변환(col_name):
     col = re.sub(r'\(.*?\)', '', col_name)  # 괄호 제거
-    col = re.sub(r'(을|를|에|의|은|는)?\s*(입력|작성|응답|쓰시오|하세요|해주세요)?', '', col)
+    col = re.sub(r'(을|를|에|의|은|는|에서)?\s*(입력|작성|선택|응답|쓰시오|하세요|해주세요|해 주세요|선택하시오|입력하시오)?', '', col)
+    col = re.sub(r'\s*(하십시오|하시오|해주세요|하세요)\s*$', '', col)
     return col.strip()
 
 uploaded_file = st.file_uploader("설문 결과 CSV 파일을 업로드하세요.", type="csv")
@@ -24,11 +25,10 @@ if uploaded_file is not None:
     st.markdown("#### 🔍 설문 항목에서 사용할 두 열을 선택해주세요")
     col1, col2 = st.columns(2)
     with col1:
-        selected_col1 = st.selectbox("📌 첫 번째 열 선택", columns, index=next((i for i, c in enumerate(columns) if '학번' in c), 0))
+        selected_col1 = st.selectbox("📌 첫 번째 열 선택", columns, index=0)
     with col2:
-        selected_col2 = st.selectbox("📌 두 번째 열 선택", columns, index=next((i for i, c in enumerate(columns) if '이름' in c), 0))
+        selected_col2 = st.selectbox("📌 두 번째 열 선택", columns, index=1)
 
-    # ▶️ 명사형 컬럼 이름
     col1_clean = 명사형으로_변환(selected_col1)
     col2_clean = 명사형으로_변환(selected_col2)
 
@@ -107,6 +107,6 @@ if uploaded_file is not None:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-    st.success(f"엑셀 시트에 반영된 열 제목은 '{col1_clean}', '{col2_clean}' 형식으로 간결하게 처리됩니다!")
+    st.success(f"선택한 항목에서 명사형으로 변환된 '{col1_clean}', '{col2_clean}'가 열 제목으로 반영됩니다!")
 else:
     st.info("CSV 파일을 업로드하면 미리보기와 편집 가능한 엑셀 파일을 다운로드할 수 있습니다.")
