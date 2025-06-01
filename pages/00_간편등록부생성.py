@@ -2,8 +2,15 @@ import streamlit as st
 import pandas as pd
 import io
 import os
+import re
 
 st.header("📥 특강 등록부 생성")
+
+# 📌 명사형 추출 함수
+def 명사형으로_변환(col_name):
+    col = re.sub(r'\(.*?\)', '', col_name)  # 괄호 제거
+    col = re.sub(r'(을|를|에|의|은|는)?\s*(입력|작성|응답|쓰시오|하세요|해주세요)?', '', col)
+    return col.strip()
 
 uploaded_file = st.file_uploader("설문 결과 CSV 파일을 업로드하세요.", type="csv")
 
@@ -21,24 +28,27 @@ if uploaded_file is not None:
     with col2:
         selected_col2 = st.selectbox("📌 두 번째 열 선택", columns, index=next((i for i, c in enumerate(columns) if '이름' in c), 0))
 
-    registration_df = df[[selected_col1, selected_col2]].copy()
+    # ▶️ 명사형 컬럼 이름
+    col1_clean = 명사형으로_변환(selected_col1)
+    col2_clean = 명사형으로_변환(selected_col2)
 
-    # 학번 기준 정렬 (첫 번째 열을 학번이라고 가정)
+    registration_df = df[[selected_col1, selected_col2]].copy()
+    registration_df.columns = [col1_clean, col2_clean]
+
     def 학번정렬키(x):
         try:
             return int(str(x).replace('-', ''))
         except:
             return str(x)
 
-    registration_df = registration_df.sort_values(by=selected_col1, key=lambda col: col.map(학번정렬키)).reset_index(drop=True)
+    registration_df = registration_df.sort_values(by=col1_clean, key=lambda col: col.map(학번정렬키)).reset_index(drop=True)
     registration_df.insert(0, '구분', range(1, len(registration_df)+1))
     registration_df['서명'] = ''
     registration_df['비고'] = ''
 
-    final_columns = ['구분', selected_col1, selected_col2, '서명', '비고']
+    final_columns = ['구분', col1_clean, col2_clean, '서명', '비고']
     registration_df = registration_df[final_columns]
 
-    # ✅ 미리보기
     st.subheader("등록부 미리보기 (상위 10명)")
     st.dataframe(
         registration_df.head(10),
@@ -59,7 +69,7 @@ if uploaded_file is not None:
             'bold': True, 'font_size': 22,
             'align': 'center', 'valign': 'vcenter'
         })
-        worksheet.merge_range('A1:E1', '(         ) 특강 등록부', title_format)
+        worksheet.merge_range('A1:E1', f'(         ) 특강 등록부', title_format)
 
         worksheet.set_row(1, 10)
 
@@ -97,6 +107,6 @@ if uploaded_file is not None:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-    st.success(f"선택한 열 제목({selected_col1}, {selected_col2})이 그대로 엑셀에 반영됩니다. 인쇄 시 항목명도 반복됩니다!")
+    st.success(f"엑셀 시트에 반영된 열 제목은 '{col1_clean}', '{col2_clean}' 형식으로 간결하게 처리됩니다!")
 else:
     st.info("CSV 파일을 업로드하면 미리보기와 편집 가능한 엑셀 파일을 다운로드할 수 있습니다.")
