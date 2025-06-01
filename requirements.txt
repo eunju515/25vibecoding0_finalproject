@@ -1,0 +1,5 @@
+pydeck
+streamlit-aggrid
+reportlab
+python-docx
+xlsxwriter
